@@ -4,7 +4,7 @@ import { auth } from '../api';
 import { useAuth } from '../context/AuthContext';
 
 export function LoginPage() {
-  const [email, setEmail] = useState('');
+  const [codigo, setCodigo] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -16,7 +16,7 @@ export function LoginPage() {
     setError('');
     setLoading(true);
     try {
-      const response = await auth.login({ email, password });
+      const response = await auth.login({ codigo, password });
       login(response);
       navigate(response.rol === 'ADMINISTRATIVO' ? '/admin' : '/menu');
     } catch (err: any) {
@@ -41,12 +41,12 @@ export function LoginPage() {
         <form onSubmit={handleSubmit}>
           <div className="mb-4">
             <label className="block text-gray-700 text-sm font-bold mb-2">
-              Email
+              Código
             </label>
             <input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              type="text"
+              value={codigo}
+              onChange={(e) => setCodigo(e.target.value)}
               className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
               required
             />
@@ -74,11 +74,8 @@ export function LoginPage() {
           </button>
         </form>
         
-        <p className="mt-4 text-center text-sm">
-          ¿No tienes cuenta?{' '}
-          <a href="/registro" className="text-blue-600 hover:underline">
-            Regístrate
-          </a>
+        <p className="mt-4 text-center text-sm text-gray-600">
+          Solo usuarios registrados pueden acceder
         </p>
       </div>
     </div>

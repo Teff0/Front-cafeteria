@@ -15,15 +15,8 @@ export interface AuthResponse {
 }
 
 export interface LoginRequest {
-  email: string;
+  codigo: string;
   password: string;
-}
-
-export interface RegistroRequest {
-  email: string;
-  password: string;
-  nombre: string;
-  rol: 'ESTUDIANTE' | 'ADMINISTRATIVO';
 }
 
 export interface Producto {

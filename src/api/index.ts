@@ -2,7 +2,6 @@ import axios from 'axios';
 import type { 
   AuthResponse, 
   LoginRequest, 
-  RegistroRequest, 
   Producto, 
   Menu, 
   Pedido, 
@@ -26,8 +25,6 @@ api.interceptors.request.use((config) => {
 });
 
 export const auth = {
-  registro: (data: RegistroRequest) => 
-    api.post<AuthResponse>('/auth/registro', data).then(res => res.data),
   login: (data: LoginRequest) => 
     api.post<AuthResponse>('/auth/login', data).then(res => res.data),
 };

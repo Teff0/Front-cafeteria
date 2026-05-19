@@ -1,7 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { LoginPage } from './pages/LoginPage';
-import { RegistroPage } from './pages/RegistroPage';
 import { MenuPage } from './pages/MenuPage';
 import { MisPedidosPage } from './pages/MisPedidosPage';
 import { AdminPage } from './pages/AdminPage';
@@ -15,7 +14,6 @@ function AppRoutes() {
   return (
     <Routes>
       <Route path="/login" element={<LoginPage />} />
-      <Route path="/registro" element={<RegistroPage />} />
       <Route
         path="/menu"
         element={
