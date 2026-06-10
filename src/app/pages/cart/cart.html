@@ -1,0 +1,84 @@
+<div class="cart-page">
+  <div class="container">
+    <div class="cart-page__header">
+      <a routerLink="/menu" class="back-link">← Seguir comprando</a>
+      <h1>Tu carrito</h1>
+      @if (carrito.items().length) {
+        <span class="cart-count">{{ carrito.cantidad() }} {{ carrito.cantidad() === 1 ? 'producto' : 'productos' }}</span>
+      }
+    </div>
+
+    @if (!carrito.items().length) {
+      <!-- VACÍO -->
+      <div class="cart-empty">
+        <div class="cart-empty__icon">🛒</div>
+        <h2>Tu carrito está vacío</h2>
+        <p>Agrega productos desde el menú para comenzar tu pedido.</p>
+        <a routerLink="/menu" class="btn-primary">Ver el menú</a>
+      </div>
+    } @else {
+      <div class="cart-layout">
+        <!-- Lista de productos -->
+        <div class="cart-items">
+          @for (item of carrito.items(); track item.producto.id) {
+            <div class="cart-item">
+              <div class="cart-item__img">
+                @if (item.producto.imagenUrl) {
+                  <img [src]="imgUrl(item.producto.imagenUrl)" [alt]="item.producto.nombre" />
+                } @else {
+                  <span>🍽️</span>
+                }
+              </div>
+              <div class="cart-item__info">
+                <h3>{{ item.producto.nombre }}</h3>
+                <p>S/ {{ item.producto.precio | number:'1.2-2' }} c/u</p>
+              </div>
+              <div class="cart-item__controls">
+                <button class="qty-btn" (click)="carrito.decrementar(item.producto.id)">−</button>
+                <span class="qty-val">{{ item.cantidad }}</span>
+                <button class="qty-btn" (click)="carrito.incrementar(item.producto.id)" [disabled]="item.cantidad >= item.producto.stock">+</button>
+              </div>
+              <span class="cart-item__subtotal">S/ {{ item.producto.precio * item.cantidad | number:'1.2-2' }}</span>
+              <button class="cart-item__remove" (click)="carrito.eliminar(item.producto.id)" aria-label="Eliminar">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </button>
+            </div>
+          }
+
+          <button class="clear-cart" (click)="carrito.vaciar()">
+            Vaciar carrito
+          </button>
+        </div>
+
+        <!-- Resumen -->
+        <aside class="cart-summary">
+          <h2>Resumen</h2>
+
+          <div class="cart-summary__lines">
+            @for (item of carrito.items(); track item.producto.id) {
+              <div class="summary-line">
+                <span>{{ item.producto.nombre }} ×{{ item.cantidad }}</span>
+                <span>S/ {{ item.producto.precio * item.cantidad | number:'1.2-2' }}</span>
+              </div>
+            }
+          </div>
+
+          <div class="cart-summary__divider"></div>
+
+          <div class="cart-summary__total">
+            <span>Total</span>
+            <span>S/ {{ carrito.total() | number:'1.2-2' }}</span>
+          </div>
+
+          <a routerLink="/orders" class="btn-checkout">
+            Confirmar pedido →
+          </a>
+
+          <p class="cart-summary__note">
+            Podrás elegir el método de pago en el siguiente paso.
+          </p>
+        </aside>
+      </div>
+    }
+  </div>
+</div>

@@ -1,0 +1,175 @@
+<div class="menu-page">
+
+  <!-- Encabezado -->
+  <div class="menu-header">
+    <div class="container">
+      <h1>Nuestro Menú</h1>
+      <p>Elige lo que más te apetezca hoy</p>
+    </div>
+  </div>
+
+  <div class="container">
+
+    <!-- Barra de búsqueda -->
+    <div class="search-bar">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><circle cx="11" cy="11" r="8" stroke="currentColor" stroke-width="2"/><path d="M21 21l-4.35-4.35" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+      <input type="search" placeholder="Buscar producto…" (input)="buscar($any($event.target).value)" />
+    </div>
+
+    <!-- Botón filtros móvil -->
+    <button class="btn-filtros-mobile" (click)="sidebarOpen.update(v => !v)">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M4 6h16M7 12h10M10 18h4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+      Filtros
+      @if (hayFiltros()) { <span class="filtros-badge"></span> }
+    </button>
+
+    <!-- Layout principal -->
+    <div class="menu-layout">
+
+      <!-- ── SIDEBAR ── -->
+      <aside class="sidebar" [class.sidebar--open]="sidebarOpen()">
+
+        <div class="sidebar__header">
+          <span class="sidebar__title">Filtros</span>
+          @if (hayFiltros()) {
+            <button class="sidebar__clear" (click)="limpiarFiltros()">Limpiar</button>
+          }
+        </div>
+
+        <!-- Categorías -->
+        <div class="filter-section">
+          <p class="filter-section__label">Categorías</p>
+          <ul class="filter-list">
+            <li>
+              <button class="filter-item" [class.filter-item--active]="!catActiva()" (click)="seleccionarCat('')">
+                <span class="filter-item__dot"></span>
+                Todos
+                <span class="filter-item__count">{{ productos().length }}</span>
+              </button>
+            </li>
+            @for (cat of categorias(); track cat.id) {
+              <li>
+                <button class="filter-item" [class.filter-item--active]="catActiva() === cat.id" (click)="seleccionarCat(cat.id)">
+                  <span class="filter-item__dot"></span>
+                  {{ cat.nombre }}
+                  <span class="filter-item__count">{{ productos().filter(p => p.categoriaId === cat.id).length }}</span>
+                </button>
+              </li>
+            }
+          </ul>
+        </div>
+
+        <!-- Sub-filtros Menú: Desayuno / Almuerzo / Cena -->
+        @if (esMenuActivo() && subsDeMenu().length) {
+          <div class="filter-section">
+            <p class="filter-section__label">Tipo de menú</p>
+            <ul class="filter-list">
+              @for (sub of subsDeMenu(); track sub.id) {
+                <li>
+                  <button class="filter-item" [class.filter-item--active]="subActiva() === sub.id"
+                    (click)="seleccionarSub(sub.id)">
+                    <span class="filter-item__dot"></span>
+                    {{ sub.nombre }}
+                    <span class="filter-item__count">{{ productos().filter(p => p.subcategoriaId === sub.id).length }}</span>
+                  </button>
+                </li>
+              }
+            </ul>
+          </div>
+        }
+
+        <!-- Productos -->
+        @if (productosPorCat().length) {
+          <div class="filter-section">
+            <p class="filter-section__label">Productos</p>
+            <ul class="filter-list filter-list--checks">
+              @for (p of productosPorCat(); track p.id) {
+                <li>
+                  <label class="filter-check">
+                    <input type="checkbox"
+                      [checked]="selProductos().has(p.id)"
+                      (change)="toggleProducto(p.id)" />
+                    <span class="filter-check__box"></span>
+                    <span class="filter-check__label">{{ p.nombre }}</span>
+                  </label>
+                </li>
+              }
+            </ul>
+          </div>
+        }
+
+      </aside>
+
+      <!-- ── CONTENIDO ── -->
+      <div class="menu-content">
+
+        @if (loading()) {
+          <div class="skeleton-grid">
+            @for (n of [1,2,3,4,5,6]; track n) { <div class="skeleton-card"></div> }
+          </div>
+        } @else if (error()) {
+          <div class="menu-state menu-state--error">
+            <span>⚠️</span><p>{{ error() }}</p>
+          </div>
+        } @else if (!filtrados().length) {
+          <div class="menu-state menu-state--empty">
+            <span>🍽️</span><p>No hay productos para este filtro.</p>
+            @if (hayFiltros()) {
+              <button class="btn-clear-empty" (click)="limpiarFiltros()">Ver todos</button>
+            }
+          </div>
+        } @else {
+          <div class="resultados-header">
+            <span class="resultados-count">{{ filtrados().length }} producto(s)</span>
+          </div>
+          <div class="productos-grid">
+            @for (p of filtrados(); track p.id) {
+              <div class="producto-card">
+                <div class="producto-card__img">
+                  @if (p.imagenUrl) {
+                    <img [src]="imgUrl(p.imagenUrl)" [alt]="p.nombre" loading="lazy" />
+                  } @else {
+                    <div class="producto-card__img-placeholder">🍽️</div>
+                  }
+                </div>
+                <div class="producto-card__body">
+                  <h3>{{ p.nombre }}</h3>
+                  @if (p.descripcion) {
+                    <p class="producto-card__desc">{{ p.descripcion }}</p>
+                  }
+                  <div class="producto-card__footer">
+                    <span class="producto-card__price">S/ {{ p.precio | number:'1.2-2' }}</span>
+                    <button class="btn-add"
+                      (click)="agregar(p)"
+                      [class.btn-add--active]="cantidadEnCarrito(p.id) > 0"
+                      [disabled]="cantidadEnCarrito(p.id) >= p.stock || p.stock <= 0"
+                      [title]="cantidadEnCarrito(p.id) >= p.stock ? 'Stock agotado' : ''">
+                      @if (cantidadEnCarrito(p.id) > 0) {
+                        <span class="btn-add__badge">{{ cantidadEnCarrito(p.id) }}</span>
+                      }
+                      @if (p.stock <= 0 || cantidadEnCarrito(p.id) >= p.stock) {
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M18 6L6 18M6 6l12 12" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/></svg>
+                      } @else {
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/></svg>
+                      }
+                    </button>
+                  </div>
+                </div>
+              </div>
+            }
+          </div>
+        }
+
+      </div>
+    </div>
+  </div>
+
+  <!-- FAB carrito -->
+  @if (carritoService.cantidad() > 0) {
+    <a routerLink="/cart" class="cart-fab">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4zM3 6h18M16 10a4 4 0 01-8 0" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+      <span class="cart-fab__badge">{{ carritoService.cantidad() }}</span>
+      <span class="cart-fab__total">S/ {{ carritoService.total() | number:'1.2-2' }}</span>
+    </a>
+  }
+</div>

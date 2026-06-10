@@ -1,0 +1,216 @@
+<div class="orders-page">
+  <div class="container">
+
+    <!-- ── PASO: LISTO ── -->
+    @if (step() === 'done') {
+      <div class="success-block">
+        <div class="success-block__icon">✅</div>
+        <h1>¡Comprobante enviado!</h1>
+        @if (pedidoActual()) {
+          <p class="success-block__code">Pedido <strong>{{ pedidoActual()!.numeroPedido }}</strong></p>
+        }
+        <p class="success-block__msg">
+          La caja verificará tu pago y pondrá tu pedido en preparación.<br>
+          Puedes ver el estado de tu pedido en "Mis pedidos" abajo.
+        </p>
+        <button class="btn-primary" (click)="nuevoPedido()">Hacer otro pedido →</button>
+      </div>
+    }
+
+    <!-- ── PASO: CHECKOUT ── -->
+    @if (step() === 'checkout') {
+      <div class="orders-header">
+        <a routerLink="/cart" class="back-link">← Volver al carrito</a>
+        <h1>Confirmar pedido</h1>
+        <p class="orders-header__sub">Paga por <strong>Yape o Plin</strong> y sube el comprobante para completar tu pedido.</p>
+      </div>
+
+      @if (!carrito.items().length) {
+        <div class="empty-cart">
+          <span>🛒</span>
+          <p>Tu carrito está vacío.</p>
+          <a routerLink="/menu" class="btn-primary">Ver productos</a>
+        </div>
+      } @else {
+        <div class="orders-layout">
+
+          <div class="orders-left">
+            <section class="pay-section">
+              <h2>¿Cómo vas a pagar?</h2>
+              <div class="pay-grid">
+                <button class="pay-card" [class.pay-card--active]="metodoPago() === 'YAPE'" (click)="selMetodo('YAPE')">
+                  <span class="pay-card__emoji">💜</span>
+                  <span class="pay-card__name">Yape</span>
+                </button>
+                <button class="pay-card" [class.pay-card--active]="metodoPago() === 'PLIN'" (click)="selMetodo('PLIN')">
+                  <span class="pay-card__emoji">💚</span>
+                  <span class="pay-card__name">Plin</span>
+                </button>
+              </div>
+            </section>
+
+            @if (error()) {
+              <div class="orders-error">⚠️ {{ error() }}</div>
+            }
+
+            <button class="btn-confirm" [disabled]="loading()" (click)="crearPedido()">
+              @if (loading()) {
+                <span class="spinner"></span> Procesando…
+              } @else {
+                Continuar con {{ metodoPago() }} · S/ {{ carrito.total() | number:'1.2-2' }}
+              }
+            </button>
+          </div>
+
+          <aside class="orders-summary">
+            <h2>Tu pedido</h2>
+            @for (item of carrito.items(); track item.producto.id) {
+              <div class="orders-summary__line">
+                <span>{{ item.producto.nombre }} <small>×{{ item.cantidad }}</small></span>
+                <span>S/ {{ item.producto.precio * item.cantidad | number:'1.2-2' }}</span>
+              </div>
+            }
+            <div class="orders-summary__divider"></div>
+            <div class="orders-summary__total">
+              <span>Total</span>
+              <strong>S/ {{ carrito.total() | number:'1.2-2' }}</strong>
+            </div>
+          </aside>
+        </div>
+      }
+    }
+
+    <!-- ── PASO: PAGAR ── -->
+    @if (step() === 'paying') {
+      <div class="orders-layout">
+
+        <div class="paying-card">
+
+          <!-- Paso 1: Realizar el pago -->
+          <div class="paying-step">
+            <div class="paying-step__badge">1</div>
+            <h2>Realiza el pago</h2>
+          </div>
+
+          <div class="payment-info">
+            <div class="payment-info__method">
+              <span class="payment-info__emoji">{{ metodoPago() === 'YAPE' ? '💜' : '💚' }}</span>
+              <div>
+                <p class="payment-info__label">Paga por {{ metodoPago() }} al número:</p>
+                <p class="payment-info__number">{{ pagoNumero() }}</p>
+              </div>
+            </div>
+            <div class="payment-info__amount-row">
+              <span class="payment-info__amount-label">Monto exacto:</span>
+              <span class="payment-info__amount-value">S/ {{ pedidoActual()!.total | number:'1.2-2' }}</span>
+            </div>
+            <p class="payment-info__ref">Referencia: <strong>{{ pedidoActual()!.numeroPedido }}</strong></p>
+          </div>
+
+          <div class="paying-divider"></div>
+
+          <!-- Paso 2: Subir comprobante -->
+          <div class="paying-step">
+            <div class="paying-step__badge">2</div>
+            <h2>Sube el comprobante</h2>
+          </div>
+
+          @if (voucherPreview()) {
+            <label class="voucher-preview" for="voucher-input">
+              <img [src]="voucherPreview()" alt="Comprobante" />
+              <div class="voucher-preview__overlay">📷 Cambiar imagen</div>
+            </label>
+          } @else {
+            <label class="voucher-drop" for="voucher-input">
+              <svg width="32" height="32" viewBox="0 0 24 24" fill="none"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              <p>Toca aquí para subir captura de pantalla</p>
+              <small>PNG, JPG — máx. 10 MB</small>
+            </label>
+          }
+          <input id="voucher-input" type="file" accept="image/*" hidden (change)="onVoucherFile($event)" />
+
+          @if (errorVoucher()) {
+            <div class="orders-error">⚠️ {{ errorVoucher() }}</div>
+          }
+
+          <button class="btn-confirm" [disabled]="uploadingVoucher() || !voucherFile()" (click)="enviarVoucher()">
+            @if (uploadingVoucher()) {
+              <span class="spinner"></span> Enviando comprobante…
+            } @else {
+              Confirmar pago →
+            }
+          </button>
+
+        </div>
+
+        <aside class="orders-summary">
+          <h2>Resumen</h2>
+          @if (pedidoActual()?.items?.length) {
+            @for (item of pedidoActual()!.items!; track $index) {
+              <div class="orders-summary__line">
+                <span>{{ item.productoNombre }} <small>×{{ item.cantidad }}</small></span>
+                <span>S/ {{ item.subtotal | number:'1.2-2' }}</span>
+              </div>
+            }
+          }
+          <div class="orders-summary__divider"></div>
+          <div class="orders-summary__total">
+            <span>Total</span>
+            <strong>S/ {{ pedidoActual()!.total | number:'1.2-2' }}</strong>
+          </div>
+        </aside>
+      </div>
+    }
+
+    <!-- ── MIS PEDIDOS ── -->
+    @if (step() !== 'paying') {
+      <section class="historial">
+        <h2>Mis pedidos</h2>
+        @if (loadingHist()) {
+          <p class="historial__loading">Cargando…</p>
+        } @else if (!historial().length) {
+          <p class="historial__empty">No tienes pedidos registrados aún.</p>
+        } @else {
+          <div class="historial__list">
+            @for (p of historial(); track p.id) {
+              <div class="historial-card" [class.historial-card--listo]="p.estado === 'LISTO'">
+                <div class="historial-card__top">
+                  <span class="historial-card__id">#{{ p.numeroPedido ?? p.id }}</span>
+                  <span [class]="'historial-card__status status--' + p.estado.toLowerCase()">{{ estadoLabel(p.estado) }}</span>
+                </div>
+                <div class="historial-card__meta">
+                  <span>{{ p.metodoPago }}</span>
+                  <strong>S/ {{ p.total | number:'1.2-2' }}</strong>
+                </div>
+                @if (p.estado === 'LISTO') {
+                  <div class="historial-card__alert">
+                    🎉 Tu pedido está listo — ¡acércate a la caja a recogerlo!
+                  </div>
+                }
+
+                @if (p.estado === 'CANCELADO' && p.motivoCancelacion?.includes('reembolso')) {
+                  <div class="historial-card__refund">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M3 12a9 9 0 109-9 9 9 0 00-6.36 2.64L3 8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M3 3v5h5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                    Devolución de S/ {{ p.total | number:'1.2-2' }} en proceso
+                  </div>
+                }
+
+                @if (puedeCancelar(p.estado)) {
+                  <button class="btn-cancelar" [disabled]="cancelando() === p.id" (click)="cancelarPedido(p)">
+                    @if (cancelando() === p.id) {
+                      <span class="spinner spinner--dark"></span> Cancelando…
+                    } @else {
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"/><path d="M15 9l-6 6M9 9l6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+                      Cancelar pedido
+                    }
+                  </button>
+                }
+              </div>
+            }
+          </div>
+        }
+      </section>
+    }
+
+  </div>
+</div>

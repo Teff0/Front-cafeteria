@@ -1,0 +1,93 @@
+<nav class="navbar" [class.navbar--scrolled]="scrolled()">
+  <div class="navbar__inner">
+
+    <!-- Brand -->
+    <a routerLink="/" class="navbar__brand">
+      <span class="navbar__logo">🍽️</span>
+      <span class="navbar__name">UTP <strong>GoFood</strong></span>
+    </a>
+
+    <!-- Links desktop -->
+    <div class="navbar__links">
+      <a routerLink="/"      routerLinkActive="active" [routerLinkActiveOptions]="{exact:true}" class="nav-link">Inicio</a>
+      <a routerLink="/menu"  routerLinkActive="active" class="nav-link">Productos</a>
+      @if (auth.isLogged()) {
+        <a routerLink="/orders" routerLinkActive="active" class="nav-link">Mis Pedidos</a>
+      }
+      @if (auth.isAdmin()) {
+        <a routerLink="/admin"    routerLinkActive="active" class="nav-link nav-link--admin">
+          <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg> Admin
+        </a>
+        <a routerLink="/reportes" routerLinkActive="active" class="nav-link nav-link--admin">
+          <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" x2="18" y1="20" y2="10"/><line x1="12" x2="12" y1="20" y2="4"/><line x1="6" x2="6" y1="20" y2="14"/></svg> Reportes
+        </a>
+      }
+      @if (auth.isCaja()) {
+        <a routerLink="/caja" routerLinkActive="active" class="nav-link nav-link--caja">
+          <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="14" x="2" y="3" rx="2"/><path d="M8 21h8m-4-4v4"/></svg> Caja
+        </a>
+      }
+    </div>
+
+    <!-- Actions -->
+    <div class="navbar__actions">
+      @if (auth.isLogged()) {
+        <a routerLink="/cart" class="nav-cart">
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="21" r="1"/><circle cx="19" cy="21" r="1"/><path d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12"/></svg>
+          @if (carrito.cantidad() > 0) {
+            <span class="nav-cart__badge">{{ carrito.cantidad() }}</span>
+          }
+        </a>
+        <div class="nav-user" (click)="toggleUser()">
+          <div class="nav-user__avatar">{{ auth.user()?.nombre?.charAt(0) }}</div>
+          <span class="nav-user__name">{{ auth.user()?.nombre }}</span>
+          <svg class="nav-user__caret" [class.rotate]="userOpen()" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+          @if (userOpen()) {
+            <div class="nav-dropdown">
+              <a routerLink="/orders" class="nav-dropdown__item" (click)="userOpen.set(false)">
+                <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" x2="21" y1="6" y2="6"/><line x1="8" x2="21" y1="12" y2="12"/><line x1="8" x2="21" y1="18" y2="18"/><line x1="3" x2="3.01" y1="6" y2="6"/><line x1="3" x2="3.01" y1="12" y2="12"/><line x1="3" x2="3.01" y1="18" y2="18"/></svg> Mis pedidos
+              </a>
+              <hr class="nav-dropdown__divider">
+              <button class="nav-dropdown__item nav-dropdown__item--danger" (click)="logout()">
+                <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" x2="9" y1="12" y2="12"/></svg> Cerrar sesión
+              </button>
+            </div>
+          }
+        </div>
+      } @else {
+        <a routerLink="/login" class="btn-login">Ingresar</a>
+      }
+
+      <!-- Burger -->
+      <button class="nav-burger" (click)="toggleMobile()" [class.open]="mobileOpen()">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+
+  </div>
+
+  <!-- Mobile menu -->
+  @if (mobileOpen()) {
+    <div class="navbar__mobile">
+      <a routerLink="/"      class="mobile-link" (click)="mobileOpen.set(false)">Inicio</a>
+      <a routerLink="/menu"  class="mobile-link" (click)="mobileOpen.set(false)">Productos</a>
+      @if (auth.isLogged()) {
+        <a routerLink="/orders" class="mobile-link" (click)="mobileOpen.set(false)">Mis Pedidos</a>
+        <a routerLink="/cart"   class="mobile-link" (click)="mobileOpen.set(false)">Carrito ({{ carrito.cantidad() }})</a>
+      }
+      @if (auth.isAdmin()) {
+        <a routerLink="/admin"    class="mobile-link" (click)="mobileOpen.set(false)">Admin</a>
+        <a routerLink="/reportes" class="mobile-link" (click)="mobileOpen.set(false)">Reportes</a>
+      }
+      @if (auth.isCaja()) {
+        <a routerLink="/caja" class="mobile-link" (click)="mobileOpen.set(false)">Caja</a>
+      }
+      @if (auth.isLogged()) {
+        <button class="mobile-link mobile-link--danger" (click)="logout()">Cerrar sesión</button>
+      } @else {
+        <a routerLink="/login" class="mobile-link" (click)="mobileOpen.set(false)">Ingresar</a>
+      }
+    </div>
+  }
+</nav>
+<div class="navbar-spacer"></div>

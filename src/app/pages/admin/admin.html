@@ -1,0 +1,447 @@
+<div class="admin-page">
+
+  <!-- ── Top bar ── -->
+  <div class="admin-topbar">
+    <div class="container">
+      <div class="admin-topbar__left">
+        <div class="admin-topbar__icon">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </div>
+        <div>
+          <h1>Panel de Administración</h1>
+          <p>Gestiona los productos del menú de la cafetería</p>
+        </div>
+      </div>
+      @if (!loading() && !error()) {
+        <div class="admin-topbar__stats">
+          <div class="admin-topbar__stat">
+            <span>{{ productos().length }}</span>
+            <p>Productos</p>
+          </div>
+          <div class="admin-topbar__stat">
+            <span>{{ categorias().length }}</span>
+            <p>Categorías</p>
+          </div>
+        </div>
+      }
+    </div>
+  </div>
+
+  <div class="container">
+
+    @if (loading()) {
+      <div class="admin-state">
+        <div class="admin-spinner"></div>
+        <p>Cargando datos…</p>
+      </div>
+    } @else if (error()) {
+      <div class="admin-state admin-state--error">
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"/><path d="M12 8v4m0 4h.01" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+        <p>{{ error() }}</p>
+      </div>
+    } @else {
+
+      <!-- ══ TABS ══ -->
+      <div class="admin-tabs">
+        <button class="admin-tab" [class.admin-tab--active]="tabActiva() === 'menu'"
+          (click)="tabActiva.set('menu')">
+          Menú
+        </button>
+        <button class="admin-tab" [class.admin-tab--active]="tabActiva() === 'productos'"
+          (click)="tabActiva.set('productos')">
+          Productos
+        </button>
+      </div>
+
+      <!-- ══ TAB MENÚ ══ -->
+      @if (tabActiva() === 'menu') {
+
+      <!-- ══ CUADRO 1: AGREGAR PRODUCTO ══ -->
+      <div class="admin-card">
+        <h2>Agregar producto</h2>
+
+        <div class="admin-form">
+          <!-- Fila 1: Categoría + Nombre -->
+          <div class="form-row">
+            <div class="form-field">
+              <label>Categoría del menú *</label>
+              <select
+                [ngModel]="nuevo().subcategoriaId"
+                (ngModelChange)="nuevo.update(n => ({...n, subcategoriaId: $event}))">
+                <option value="">— Seleccionar —</option>
+                @for (sub of subsMenu(); track sub.id) {
+                  <option [value]="sub.id">{{ sub.nombre }}</option>
+                }
+              </select>
+            </div>
+            <div class="form-field">
+              <label>Nombre del producto *</label>
+              <input type="text"
+                [value]="nuevo().nombre"
+                (input)="nuevo.update(n => ({...n, nombre: $any($event.target).value}))"
+                placeholder="Ej: Pan con queso, Arroz, Leche" />
+            </div>
+          </div>
+
+          <!-- Fila 2: Precio + Stock -->
+          <div class="form-row">
+            <div class="form-field">
+              <label>Precio (S/) *</label>
+              <input type="number" step="0.50" min="0"
+                [value]="nuevo().precio"
+                (input)="nuevo.update(n => ({...n, precio: +$any($event.target).value}))"
+                placeholder="0.00" />
+            </div>
+            <div class="form-field">
+              <label>Stock (unidades)</label>
+              <input type="number" min="0"
+                [value]="nuevo().stock"
+                (input)="nuevo.update(n => ({...n, stock: +$any($event.target).value}))"
+                placeholder="0" />
+            </div>
+          </div>
+
+          <!-- Fila 3: Descripción + Imagen -->
+          <div class="form-row">
+            <div class="form-field">
+              <label>Descripción</label>
+              <input type="text"
+                [value]="nuevo().descripcion"
+                (input)="nuevo.update(n => ({...n, descripcion: $any($event.target).value}))"
+                placeholder="Opcional" />
+            </div>
+            <div class="form-field">
+              <label>Imagen</label>
+              <label class="img-upload" [class.img-upload--has]="prevImg()">
+                @if (prevImg()) {
+                  <img [src]="prevImg()" class="img-upload__preview" alt="preview" />
+                  <span class="img-upload__change">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><circle cx="12" cy="13" r="4" stroke="currentColor" stroke-width="2"/></svg>
+                    Cambiar imagen
+                  </span>
+                } @else {
+                  <span class="img-upload__icon">
+                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><circle cx="12" cy="13" r="4" stroke="currentColor" stroke-width="1.5"/></svg>
+                  </span>
+                  <span class="img-upload__text">Haz clic para subir imagen</span>
+                  <span class="img-upload__hint">JPG, PNG, WEBP</span>
+                }
+                <input type="file" accept="image/*" (change)="onImagen($event)" hidden />
+              </label>
+            </div>
+          </div>
+
+          @if (errorForm()) {
+            <p class="form-error">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"/><path d="M12 8v4m0 4h.01" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+              {{ errorForm() }}
+            </p>
+          }
+
+          <button class="btn-save" [disabled]="saving()" (click)="guardar()">
+            @if (saving()) {
+              <span class="btn-spinner"></span> Guardando…
+            } @else {
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/></svg>
+              Agregar producto
+            }
+          </button>
+        </div>
+      </div>
+
+      <!-- ══ CUADRO 2: TABLAS POR CATEGORÍA ══ -->
+      @for (sub of subsMenu(); track sub.id) {
+        <div class="sec-card">
+
+          <!-- Header con color por categoría -->
+          <div class="sec-header" [class]="'sec-header--' + sub.nombre.toLowerCase()">
+            @if (sub.nombre.toLowerCase() === 'desayuno') {
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>
+            } @else if (sub.nombre.toLowerCase() === 'almuerzo') {
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2"/><path d="M7 2v20"/><path d="M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3zm0 0v7"/></svg>
+            } @else {
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9z"/></svg>
+            }
+            <span class="sec-title">{{ sub.nombre }}</span>
+            <span class="sec-count">{{ prodsPorMeal(sub.nombre).length }}</span>
+          </div>
+
+          <!-- Tabla de productos -->
+          <table class="prod-table">
+            <thead>
+              <tr>
+                <th class="col-img">Imagen</th>
+                <th>Nombre</th>
+                <th class="col-price">Precio</th>
+                <th class="col-stock">Stock</th>
+                <th class="col-disp">Disponible</th>
+                <th class="col-actions">Acciones</th>
+              </tr>
+            </thead>
+            <tbody>
+              @if (!prodsPorMeal(sub.nombre).length) {
+                <tr>
+                  <td colspan="6" class="td-empty-msg">Sin productos en esta categoría.</td>
+                </tr>
+              }
+              @for (p of prodsPorMeal(sub.nombre); track p.id) {
+                @if (editando()?.id !== p.id) {
+                  <tr class="prod-tr">
+                    <td class="col-img">
+                      <div class="prod-img-cell">
+                        @if (p.imagenUrl) {
+                          <img [src]="imgSrc(p.imagenUrl)" [alt]="p.nombre" class="prod-thumb" />
+                        } @else {
+                          <span class="prod-img-placeholder">🍽️</span>
+                        }
+                      </div>
+                    </td>
+                    <td class="prod-name">{{ p.nombre }}</td>
+                    <td class="prod-price">S/ {{ p.precio | number:'1.2-2' }}</td>
+                    <td><span class="stock-pill" [class.stock-pill--low]="p.stock < 5">{{ p.stock }}</span></td>
+                    <td>
+                      <button class="disp-pill" [class.disp-pill--yes]="p.disponible" [class.disp-pill--no]="!p.disponible"
+                        (click)="toggleDisponible(p.id, p.disponible)">
+                        {{ p.disponible ? 'Sí' : 'No' }}
+                      </button>
+                    </td>
+                    <td>
+                      <div class="prod-actions">
+                        <button class="btn-row-icon" title="Editar" (click)="iniciarEdicion(p)">
+                          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg>
+                        </button>
+                        <button class="btn-row-icon btn-row-icon--del" title="Eliminar" (click)="eliminarProducto(p.id)">
+                          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg>
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                } @else {
+                  <tr class="prod-tr prod-tr--editing">
+                    <td class="col-img">
+                      <label class="prod-edit-img-wrap">
+                        <img [src]="prevEdicion() || imgSrc(editando()!.imagenUrl) || ''" class="prod-thumb" alt="img" />
+                        <span class="prod-edit-img-overlay">
+                          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+                        </span>
+                        <input type="file" accept="image/*" (change)="onImagenEdicion($event)" hidden />
+                      </label>
+                    </td>
+                    <td><input class="edit-input" type="text" [(ngModel)]="editando()!.nombre" /></td>
+                    <td><input class="edit-input" type="number" step="0.50" [(ngModel)]="editando()!.precio" /></td>
+                    <td><input class="edit-input edit-input--sm" type="number" min="0" [(ngModel)]="editando()!.stock" /></td>
+                    <td>
+                      <button class="disp-pill" [class.disp-pill--yes]="editando()!.disponible" [class.disp-pill--no]="!editando()!.disponible"
+                        (click)="editando.update(e => e ? {...e, disponible: !e.disponible} : e)">
+                        {{ editando()!.disponible ? 'Sí' : 'No' }}
+                      </button>
+                    </td>
+                    <td>
+                      <div class="prod-actions">
+                        <button class="btn-save-sm" [disabled]="saving()" (click)="guardarEdicion()">Guardar</button>
+                        <button class="btn-cancel-sm" (click)="cancelarEdicion()">Cancelar</button>
+                      </div>
+                    </td>
+                  </tr>
+                }
+              }
+            </tbody>
+          </table>
+
+        </div>
+      }
+
+      } <!-- fin tab menú -->
+
+      <!-- ══ TAB PRODUCTOS ══ -->
+      @if (tabActiva() === 'productos') {
+
+      <!-- ══ CUADRO 3: AGREGAR BEBIDA/FRUTA/SNACK ══ -->
+      <div class="admin-card">
+        <h2>Agregar bebida / fruta / snack</h2>
+
+        <div class="admin-form">
+          <div class="form-row">
+            <div class="form-field">
+              <label>Categoría *</label>
+              <select
+                [ngModel]="nuevoOtro().categoriaId"
+                (ngModelChange)="nuevoOtro.update(n => ({...n, categoriaId: $event}))">
+                <option value="">— Seleccionar —</option>
+                @for (cat of catsOtras(); track cat.id) {
+                  <option [value]="cat.id">{{ cat.nombre }}</option>
+                }
+              </select>
+            </div>
+            <div class="form-field">
+              <label>Nombre del producto *</label>
+              <input type="text"
+                [value]="nuevoOtro().nombre"
+                (input)="nuevoOtro.update(n => ({...n, nombre: $any($event.target).value}))"
+                placeholder="Ej: Coca-Cola, Manzana, Papas fritas" />
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-field">
+              <label>Precio (S/) *</label>
+              <input type="number" step="0.50" min="0"
+                [value]="nuevoOtro().precio"
+                (input)="nuevoOtro.update(n => ({...n, precio: +$any($event.target).value}))"
+                placeholder="0.00" />
+            </div>
+            <div class="form-field">
+              <label>Stock (unidades)</label>
+              <input type="number" min="0"
+                [value]="nuevoOtro().stock"
+                (input)="nuevoOtro.update(n => ({...n, stock: +$any($event.target).value}))"
+                placeholder="0" />
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-field">
+              <label>Descripción</label>
+              <input type="text"
+                [value]="nuevoOtro().descripcion"
+                (input)="nuevoOtro.update(n => ({...n, descripcion: $any($event.target).value}))"
+                placeholder="Opcional" />
+            </div>
+            <div class="form-field">
+              <label>Imagen</label>
+              <label class="img-upload" [class.img-upload--has]="prevImgOtro()">
+                @if (prevImgOtro()) {
+                  <img [src]="prevImgOtro()" class="img-upload__preview" alt="preview" />
+                  <span class="img-upload__change">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><circle cx="12" cy="13" r="4" stroke="currentColor" stroke-width="2"/></svg>
+                    Cambiar imagen
+                  </span>
+                } @else {
+                  <span class="img-upload__icon">
+                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><circle cx="12" cy="13" r="4" stroke="currentColor" stroke-width="1.5"/></svg>
+                  </span>
+                  <span class="img-upload__text">Haz clic para subir imagen</span>
+                  <span class="img-upload__hint">JPG, PNG, WEBP</span>
+                }
+                <input type="file" accept="image/*" (change)="onImagenOtro($event)" hidden />
+              </label>
+            </div>
+          </div>
+
+          @if (errorFormOtro()) {
+            <p class="form-error">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"/><path d="M12 8v4m0 4h.01" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+              {{ errorFormOtro() }}
+            </p>
+          }
+
+          <button class="btn-save" [disabled]="savingOtro()" (click)="guardarOtro()">
+            @if (savingOtro()) {
+              <span class="btn-spinner"></span> Guardando…
+            } @else {
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/></svg>
+              Agregar producto
+            }
+          </button>
+        </div>
+      </div>
+
+      <!-- ══ CUADRO 4: TABLAS BEBIDAS/FRUTAS/SNACKS ══ -->
+      @for (cat of catsOtras(); track cat.id) {
+        @let catProds = productosOtros().filter(p => p.categoriaId === cat.id);
+        <div class="sec-card">
+          <div class="sec-header" [class]="'sec-header--' + cat.nombre.toLowerCase()">
+            @if (cat.nombre.toLowerCase() === 'bebidas') {
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 2h8l1 10H7L8 2z"/><path d="M7 12c0 4 2 6 5 6s5-2 5-6"/><path d="M6 7h12"/></svg>
+            } @else if (cat.nombre.toLowerCase() === 'frutas') {
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a8 8 0 0 1 8 8c0 5-8 12-8 12S4 15 4 10a8 8 0 0 1 8-8z"/><path d="M12 2c0 0 2-1 4 1"/></svg>
+            } @else {
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8h1a4 4 0 0 1 0 8h-1"/><path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"/><line x1="6" y1="1" x2="6" y2="4"/><line x1="10" y1="1" x2="10" y2="4"/><line x1="14" y1="1" x2="14" y2="4"/></svg>
+            }
+            <span class="sec-title">{{ cat.nombre }}</span>
+            <span class="sec-count">{{ catProds.length }}</span>
+          </div>
+
+          <table class="prod-table">
+            <thead>
+              <tr>
+                <th class="col-img">Imagen</th>
+                <th>Nombre</th>
+                <th class="col-price">Precio</th>
+                <th class="col-stock">Stock</th>
+                <th class="col-disp">Disponible</th>
+                <th class="col-actions">Acciones</th>
+              </tr>
+            </thead>
+            <tbody>
+              @if (!catProds.length) {
+                <tr><td colspan="6" class="td-empty-msg">Sin productos en esta categoría.</td></tr>
+              }
+              @for (p of catProds; track p.id) {
+                @if (editando()?.id !== p.id) {
+                  <tr class="prod-tr">
+                    <td class="col-img">
+                      <div class="prod-img-cell">
+                        @if (p.imagenUrl) { <img [src]="imgSrc(p.imagenUrl)" [alt]="p.nombre" class="prod-thumb" /> }
+                        @else { <span class="prod-img-placeholder">🛒</span> }
+                      </div>
+                    </td>
+                    <td class="prod-name">{{ p.nombre }}</td>
+                    <td class="prod-price">S/ {{ p.precio | number:'1.2-2' }}</td>
+                    <td><span class="stock-pill" [class.stock-pill--low]="p.stock < 5">{{ p.stock }}</span></td>
+                    <td>
+                      <button class="disp-pill" [class.disp-pill--yes]="p.disponible" [class.disp-pill--no]="!p.disponible"
+                        (click)="toggleDisponible(p.id, p.disponible)">
+                        {{ p.disponible ? 'Sí' : 'No' }}
+                      </button>
+                    </td>
+                    <td>
+                      <div class="prod-actions">
+                        <button class="btn-row-icon" (click)="iniciarEdicion(p)">
+                          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg>
+                        </button>
+                        <button class="btn-row-icon btn-row-icon--del" (click)="eliminarProducto(p.id)">
+                          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg>
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                } @else {
+                  <tr class="prod-tr prod-tr--editing">
+                    <td class="col-img">
+                      <label class="prod-edit-img-wrap">
+                        <img [src]="prevEdicion() || imgSrc(editando()!.imagenUrl) || ''" class="prod-thumb" alt="img" />
+                        <span class="prod-edit-img-overlay">
+                          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+                        </span>
+                        <input type="file" accept="image/*" (change)="onImagenEdicion($event)" hidden />
+                      </label>
+                    </td>
+                    <td><input class="edit-input" type="text" [(ngModel)]="editando()!.nombre" /></td>
+                    <td><input class="edit-input" type="number" step="0.50" [(ngModel)]="editando()!.precio" /></td>
+                    <td><input class="edit-input edit-input--sm" type="number" min="0" [(ngModel)]="editando()!.stock" /></td>
+                    <td>
+                      <button class="disp-pill" [class.disp-pill--yes]="editando()!.disponible" [class.disp-pill--no]="!editando()!.disponible"
+                        (click)="editando.update(e => e ? {...e, disponible: !e.disponible} : e)">
+                        {{ editando()!.disponible ? 'Sí' : 'No' }}
+                      </button>
+                    </td>
+                    <td>
+                      <div class="prod-actions">
+                        <button class="btn-save-sm" [disabled]="saving()" (click)="guardarEdicion()">Guardar</button>
+                        <button class="btn-cancel-sm" (click)="cancelarEdicion()">Cancelar</button>
+                      </div>
+                    </td>
+                  </tr>
+                }
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+
+      } <!-- fin tab productos -->
+
+    }
+  </div>
+</div>

@@ -1,0 +1,336 @@
+<div class="reportes-page">
+
+  <!-- ── Top bar ── -->
+  <div class="rep-topbar">
+    <div class="container">
+      <div class="rep-topbar__left">
+        <div class="rep-topbar__icon">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><line x1="18" y1="20" x2="18" y2="10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><line x1="12" y1="20" x2="12" y2="4"  stroke="currentColor" stroke-width="2" stroke-linecap="round"/><line x1="6"  y1="20" x2="6"  y2="14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+        </div>
+        <div>
+          <h1>Reportes</h1>
+          <p>Análisis de ventas, pedidos y productos</p>
+        </div>
+      </div>
+
+      @if (!loadingVentas() && ventas()) {
+        <div class="rep-topbar__kpis">
+          <div class="rep-kpi rep-kpi--ventas">
+            <span class="rep-kpi__num">S/ {{ ventas()!.totalVentas | number:'1.2-2' }}</span>
+            <span class="rep-kpi__label">Total ventas</span>
+          </div>
+          <div class="rep-kpi rep-kpi--pedidos">
+            <span class="rep-kpi__num">{{ ventas()!.totalPedidos }}</span>
+            <span class="rep-kpi__label">Pedidos</span>
+          </div>
+          <div class="rep-kpi rep-kpi--promedio">
+            <span class="rep-kpi__num">S/ {{ ventas()!.promedioPorPedido | number:'1.2-2' }}</span>
+            <span class="rep-kpi__label">Promedio</span>
+          </div>
+        </div>
+      }
+    </div>
+  </div>
+
+  <div class="container">
+
+    <!-- ── Filtros ── -->
+    <div class="rep-filters">
+      <div class="rep-filters__group">
+        <label>Desde</label>
+        <input type="date" [ngModel]="fechaInicio()" (ngModelChange)="fechaInicio.set($event)" />
+      </div>
+      <div class="rep-filters__group">
+        <label>Hasta</label>
+        <input type="date" [ngModel]="fechaFin()" (ngModelChange)="fechaFin.set($event)" />
+      </div>
+      <button class="btn-consultar" (click)="consultar()" [disabled]="loadingVentas() || loadingPedidos()">
+        @if (loadingVentas() || loadingPedidos()) {
+          <span class="btn-spinner"></span> Consultando…
+        } @else {
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none"><circle cx="11" cy="11" r="8" stroke="currentColor" stroke-width="2"/><path d="M21 21l-4.35-4.35" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+          Consultar
+        }
+      </button>
+    </div>
+
+    <!-- ── KPIs de ventas ── -->
+    <section class="rep-section">
+      <div class="rep-section__head">
+        <div class="rep-section__title">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+          Resumen de ventas
+        </div>
+        <button class="btn-export" (click)="descargarVentas()" [disabled]="descargando() === 'ventas'">
+          @if (descargando() === 'ventas') {
+            <span class="btn-spinner btn-spinner--sm"></span> Generando…
+          } @else {
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><polyline points="7 10 12 15 17 10" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><line x1="12" y1="15" x2="12" y2="3" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+            Exportar Excel
+          }
+        </button>
+      </div>
+
+      @if (loadingVentas()) {
+        <div class="rep-loading"><div class="rep-spinner"></div><p>Cargando reporte…</p></div>
+      } @else if (errorVentas()) {
+        <div class="rep-error">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"/><path d="M12 8v4m0 4h.01" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+          {{ errorVentas() }}
+        </div>
+      } @else if (ventas()) {
+        <div class="kpi-grid">
+          <div class="kpi-card kpi-card--ventas">
+            <div class="kpi-card__icon">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+            </div>
+            <div class="kpi-card__body">
+              <p class="kpi-card__label">Total ventas</p>
+              <p class="kpi-card__value">S/ {{ ventas()!.totalVentas | number:'1.2-2' }}</p>
+            </div>
+          </div>
+
+          <div class="kpi-card kpi-card--pedidos">
+            <div class="kpi-card__icon">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><rect x="9" y="3" width="6" height="4" rx="1" stroke="currentColor" stroke-width="2"/></svg>
+            </div>
+            <div class="kpi-card__body">
+              <p class="kpi-card__label">Total pedidos</p>
+              <p class="kpi-card__value">{{ ventas()!.totalPedidos }}</p>
+            </div>
+          </div>
+
+          <div class="kpi-card kpi-card--promedio">
+            <div class="kpi-card__icon">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><line x1="18" y1="20" x2="18" y2="10" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><line x1="12" y1="20" x2="12" y2="4"  stroke="currentColor" stroke-width="2" stroke-linecap="round"/><line x1="6"  y1="20" x2="6"  y2="14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+            </div>
+            <div class="kpi-card__body">
+              <p class="kpi-card__label">Promedio por pedido</p>
+              <p class="kpi-card__value">S/ {{ ventas()!.promedioPorPedido | number:'1.2-2' }}</p>
+            </div>
+          </div>
+
+          <div class="kpi-card kpi-card--descuento">
+            <div class="kpi-card__icon">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><line x1="19" y1="5" x2="5" y2="19" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><circle cx="6.5" cy="6.5" r="2.5" stroke="currentColor" stroke-width="2"/><circle cx="17.5" cy="17.5" r="2.5" stroke="currentColor" stroke-width="2"/></svg>
+            </div>
+            <div class="kpi-card__body">
+              <p class="kpi-card__label">Descuentos otorgados</p>
+              <p class="kpi-card__value">S/ {{ descuentoTotal() | number:'1.2-2' }}</p>
+            </div>
+          </div>
+
+          <div class="kpi-card kpi-card--cancelado">
+            <div class="kpi-card__icon">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"/><path d="M15 9l-6 6M9 9l6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+            </div>
+            <div class="kpi-card__body">
+              <p class="kpi-card__label">Pedidos cancelados</p>
+              <p class="kpi-card__value">{{ cancelados() }} <span class="kpi-card__sub">({{ tasaCancelacion() | number:'1.0-1' }}%)</span></p>
+            </div>
+          </div>
+
+          <div class="kpi-card kpi-card--periodo">
+            <div class="kpi-card__icon">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><rect x="3" y="4" width="18" height="18" rx="2" stroke="currentColor" stroke-width="2"/><line x1="16" y1="2" x2="16" y2="6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><line x1="8"  y1="2" x2="8"  y2="6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><line x1="3"  y1="10" x2="21" y2="10" stroke="currentColor" stroke-width="2"/></svg>
+            </div>
+            <div class="kpi-card__body">
+              <p class="kpi-card__label">Período</p>
+              <p class="kpi-card__value kpi-card__value--sm">{{ ventas()!.fechaInicio }} → {{ ventas()!.fechaFin }}</p>
+            </div>
+          </div>
+        </div>
+      }
+    </section>
+
+    <!-- ── Gráfico: ventas por día ── -->
+    <section class="rep-section">
+      <div class="rep-section__head">
+        <div class="rep-section__title">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M3 3v18h18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M7 14l4-4 3 3 5-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          Ventas por día
+        </div>
+      </div>
+
+      @if (loadingPedidos()) {
+        <div class="rep-loading"><div class="rep-spinner"></div><p>Cargando…</p></div>
+      } @else if (errorPedidos()) {
+        <div class="rep-error">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"/><path d="M12 8v4m0 4h.01" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+          {{ errorPedidos() }}
+        </div>
+      } @else if (!ventasPorDia().days.length) {
+        <div class="rep-empty">
+          <svg width="36" height="36" viewBox="0 0 24 24" fill="none"><path d="M3 3v18h18" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+          <p>No hay ventas en este período.</p>
+        </div>
+      } @else {
+        <div class="chart-area-wrap">
+          <svg class="chart-area" [attr.viewBox]="'0 0 ' + ventasPorDia().W + ' ' + ventasPorDia().H" preserveAspectRatio="none">
+            <defs>
+              <linearGradient id="areaGrad" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%"  stop-color="#E07B39" stop-opacity="0.35"/>
+                <stop offset="100%" stop-color="#E07B39" stop-opacity="0"/>
+              </linearGradient>
+            </defs>
+
+            <!-- gridlines -->
+            @for (g of ventasPorDia().gridLines; track g.y) {
+              <line [attr.x1]="ventasPorDia().padL" [attr.y1]="g.y" [attr.x2]="ventasPorDia().W - 20" [attr.y2]="g.y"
+                    stroke="#F0EDE8" stroke-width="1"/>
+              <text [attr.x]="ventasPorDia().padL - 8" [attr.y]="g.y + 4" text-anchor="end" class="chart-axis-label">
+                {{ g.value | number:'1.0-0' }}
+              </text>
+            }
+
+            <!-- área + línea -->
+            <path [attr.d]="ventasPorDia().areaPath" fill="url(#areaGrad)"/>
+            <path [attr.d]="ventasPorDia().linePath" fill="none" stroke="#E07B39" stroke-width="2.5"
+                  stroke-linecap="round" stroke-linejoin="round"/>
+
+            <!-- puntos + etiquetas eje X -->
+            @for (p of ventasPorDia().points; track p.fecha) {
+              <circle [attr.cx]="p.x" [attr.cy]="p.y" r="4" fill="#fff" stroke="#E07B39" stroke-width="2.5"/>
+              @if (p.show) {
+                <text [attr.x]="p.x" [attr.y]="ventasPorDia().baseY + 22" text-anchor="middle" class="chart-axis-label">
+                  {{ p.label }}
+                </text>
+              }
+            }
+          </svg>
+        </div>
+      }
+    </section>
+
+    <!-- ── Donuts: estados + métodos de pago ── -->
+    <div class="charts-row">
+
+      <section class="rep-section">
+        <div class="rep-section__head">
+          <div class="rep-section__title">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M21.21 15.89A10 10 0 118 2.83" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M22 12A10 10 0 0012 2v10z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>
+            Pedidos por estado
+          </div>
+        </div>
+
+        @if (loadingPedidos()) {
+          <div class="rep-loading"><div class="rep-spinner"></div></div>
+        } @else if (!pedidosPorEstado().total) {
+          <div class="rep-empty"><p>Sin datos.</p></div>
+        } @else {
+          <div class="donut-block">
+            <div class="donut-wrap">
+              <svg viewBox="0 0 120 120" class="donut">
+                <circle cx="60" cy="60" r="54" fill="none" stroke="#F5F5F4" stroke-width="14"/>
+                @for (s of pedidosPorEstado().segments; track s.label) {
+                  <circle cx="60" cy="60" r="54" fill="none" [attr.stroke]="s.color" stroke-width="14"
+                          [attr.stroke-dasharray]="s.dash" [attr.stroke-dashoffset]="s.offset"
+                          transform="rotate(-90 60 60)" stroke-linecap="butt"/>
+                }
+                <text x="60" y="55" text-anchor="middle" class="donut-center-num">{{ pedidosPorEstado().total }}</text>
+                <text x="60" y="70" text-anchor="middle" class="donut-center-lbl">pedidos</text>
+              </svg>
+            </div>
+            <ul class="donut-legend">
+              @for (s of pedidosPorEstado().segments; track s.label) {
+                <li>
+                  <span class="donut-legend__dot" [style.background]="s.color"></span>
+                  <span class="donut-legend__label">{{ s.label }}</span>
+                  <span class="donut-legend__val">{{ s.value }} · {{ s.percent | number:'1.0-1' }}%</span>
+                </li>
+              }
+            </ul>
+          </div>
+        }
+      </section>
+
+      <section class="rep-section">
+        <div class="rep-section__head">
+          <div class="rep-section__title">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><rect x="1" y="4" width="22" height="16" rx="2" stroke="currentColor" stroke-width="2"/><line x1="1" y1="10" x2="23" y2="10" stroke="currentColor" stroke-width="2"/></svg>
+            Métodos de pago
+          </div>
+        </div>
+
+        @if (loadingPedidos()) {
+          <div class="rep-loading"><div class="rep-spinner"></div></div>
+        } @else if (!metodosPago().total) {
+          <div class="rep-empty"><p>Sin datos.</p></div>
+        } @else {
+          <div class="donut-block">
+            <div class="donut-wrap">
+              <svg viewBox="0 0 120 120" class="donut">
+                <circle cx="60" cy="60" r="54" fill="none" stroke="#F5F5F4" stroke-width="14"/>
+                @for (s of metodosPago().segments; track s.label) {
+                  <circle cx="60" cy="60" r="54" fill="none" [attr.stroke]="s.color" stroke-width="14"
+                          [attr.stroke-dasharray]="s.dash" [attr.stroke-dashoffset]="s.offset"
+                          transform="rotate(-90 60 60)" stroke-linecap="butt"/>
+                }
+                <text x="60" y="55" text-anchor="middle" class="donut-center-num">{{ metodosPago().total }}</text>
+                <text x="60" y="70" text-anchor="middle" class="donut-center-lbl">pagos</text>
+              </svg>
+            </div>
+            <ul class="donut-legend">
+              @for (s of metodosPago().segments; track s.label) {
+                <li>
+                  <span class="donut-legend__dot" [style.background]="s.color"></span>
+                  <span class="donut-legend__label">{{ s.label }}</span>
+                  <span class="donut-legend__val">{{ s.value }} · {{ s.percent | number:'1.0-1' }}%</span>
+                </li>
+              }
+            </ul>
+          </div>
+        }
+      </section>
+
+    </div>
+
+    <!-- ── Barras: horario pico ── -->
+    <section class="rep-section">
+      <div class="rep-section__head">
+        <div class="rep-section__title">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"/><path d="M12 6v6l4 2" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+          Horario pico de pedidos
+        </div>
+      </div>
+
+      @if (loadingPedidos()) {
+        <div class="rep-loading"><div class="rep-spinner"></div></div>
+      } @else if (!ventasPorHora().length) {
+        <div class="rep-empty"><p>Sin datos de horario.</p></div>
+      } @else {
+        <div class="hours-chart">
+          @for (h of ventasPorHora(); track h.hora) {
+            <div class="hour-col" [title]="h.count + ' pedidos · S/ ' + (h.total | number:'1.2-2')">
+              <span class="hour-col__val">{{ h.count }}</span>
+              <div class="hour-col__bar" [style.height.%]="h.heightPct"></div>
+              <span class="hour-col__lbl">{{ h.etiqueta }}</span>
+            </div>
+          }
+        </div>
+      }
+    </section>
+
+    <!-- ── Reporte de inventario / stock ── -->
+    <section class="rep-section">
+      <div class="inv-block">
+        <div class="inv-block__icon">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M21 8V21H3V8M1 3h22v5H1zM10 12h4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </div>
+        <div class="inv-block__text">
+          <h3>Reporte de inventario</h3>
+          <p>Descarga el listado completo de productos con su categoría, subcategoría, precio, stock y disponibilidad.</p>
+        </div>
+        <button class="btn-export btn-export--lg" (click)="descargarInventario()" [disabled]="descargando() === 'inventario'">
+          @if (descargando() === 'inventario') {
+            <span class="btn-spinner btn-spinner--sm"></span> Generando…
+          } @else {
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><polyline points="7 10 12 15 17 10" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><line x1="12" y1="15" x2="12" y2="3" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+            Descargar inventario (Excel)
+          }
+        </button>
+      </div>
+    </section>
+
+  </div>
+</div>

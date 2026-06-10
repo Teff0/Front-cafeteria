@@ -1,0 +1,48 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Google Fonts */
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter:wght@400;500;600&display=swap');
+
+/* ── Design Tokens ── */
+:root {
+  --c-primary:       #E07B39;
+  --c-primary-dark:  #C4621F;
+  --c-primary-light: #FFF3EB;
+  --c-secondary:     #3D8F5F;
+  --c-accent:        #F4B942;
+  --c-dark:          #1C1917;
+  --c-body:          #44403C;
+  --c-muted:         #78716C;
+  --c-border:        #E7E5E4;
+  --c-bg:            #FFFDF8;
+  --font-heading:    'Plus Jakarta Sans', sans-serif;
+  --font-body:       'Inter', sans-serif;
+  --radius:          12px;
+  --shadow:          0 4px 16px rgba(28,25,23,.10);
+}
+
+/* ── Base ── */
+*, *::before, *::after { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body {
+  font-family: var(--font-body);
+  background: var(--c-bg);
+  color: var(--c-body);
+  -webkit-font-smoothing: antialiased;
+  margin: 0;
+}
+h1,h2,h3,h4,h5,h6 {
+  font-family: var(--font-heading);
+  color: var(--c-dark);
+  line-height: 1.25;
+}
+a { text-decoration: none; color: inherit; }
+img { max-width: 100%; }
+
+/* ── Scrollbar ── */
+::-webkit-scrollbar { width: 5px; }
+::-webkit-scrollbar-track { background: var(--c-bg); }
+::-webkit-scrollbar-thumb { background: var(--c-border); border-radius: 3px; }
+
